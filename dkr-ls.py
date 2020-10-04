@@ -34,7 +34,9 @@ def getImages(cmd):
                 'repository': l[0],
                 'tag': l[1],
                 'id': l[2],
+                'created': f'{l[3]} {l[4]} ago',
                 'age': calculateAge(l[3], l[4]),
+                # TODO: this needs to be separated into size and unit
                 'size': int(l[6].replace('MB',''))
             }
             images.append(image)
@@ -43,7 +45,27 @@ def getImages(cmd):
 def getRepos(images, args = {}):
     print(images)
 
+def main():
+    usage = 'Usage: %prog [options]'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--log-level', help='Set logging at a specific level. Options include DEBUG,INFO,WARNING,ERROR.',
+                        metavar='LOG_LEVEL', default='INFO')
+    subparsers = parser.add_subparsers()
 
-images = getImages('docker images')
-getRepos(images)
+    r_parser = subparsers.add_parser('repos', help='List all Docker repositories')
 
+    t_parser = subparsers.add_parser('tags', help='List all Docker image tags')
+    t_parser.add_argument('--minAge', help='List only images older than minAge days', metavar='AGE', type=int, default=None)
+    t_parser.add_argument('--prefix', help='List only images with these repository prefixes; accepts multiple prefixes.', nargs='*', action='append', metavar='PREFIX', type=str, default=None)
+    t_parser.add_argument('--maxTags', help='List only maxTags number of tags of each image.', metavar='TAGS', type=str, default=None)
+    t_parser.add_argument('--minSize', help='List only images bigger than minSize in human-readable format.', metavar='SIZE', type=str, default=None)
+    t_parser.add_argument('--sum', help='Sum all image sizes and print them at the end of the listing.', action='store_true', default=False)
+
+    args = parser.parse_args()
+    print(args)
+
+    # images = getImages('docker images')
+    # getRepos(images)
+
+if __name__ == '__main__':
+    main()
