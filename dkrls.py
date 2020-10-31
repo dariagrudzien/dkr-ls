@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, shlex, subprocess, re
-
-# $ docker images
-# REPOSITORY                    TAG                 IMAGE ID            CREATED             SIZE
-# daria-k8s-example             latest              4b7887b8c2d3        5 days ago          882MB
-# daria-example                 latest              393f0e8bf585        5 days ago          882MB
-# <none>                        <none>              f23e4f6c4d32        5 days ago          882MB
-# <none>                        <none>              35c46893ce8b        5 days ago          882MB
-# <none>                        <none>              6845d517696b        5 days ago          882MB
-# python                        buster              bbf31371d67d        9 days ago          882MB
-# gcr.io/k8s-minikube/kicbase   v0.0.12-snapshot3   25ac91b9c8d7        5 weeks ago         952MB
+import argparse, shlex, subprocess, re, logging
 
 def calculateAge(number, unit):
     if unit == 'days':
@@ -145,13 +135,17 @@ def main():
 
     args = parser.parse_args()
 
-    images = getImages('docker images')
+    try:
+        images = getImages('docker images')
 
-    if args.cmd == 'repos':
-        getRepos(images,args)
+        if args.cmd == 'repos':
+            getRepos(images,args)
 
-    if args.cmd == 'tags':
-        getTags(images, args)
+        if args.cmd == 'tags':
+            getTags(images, args)
+
+    except Exception as e:
+
 
 if __name__ == '__main__':
     main()
