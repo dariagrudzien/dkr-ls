@@ -36,11 +36,31 @@ Usage:
 
 ## Logging
 
+You can change the logging level, e.g. to see detailed logs:
+
+```sh
+  ./dkrls.py -l 'DEBUG' repos
+```
+
+```sh
+  usage: dkrls.py [-h] [-l LOG_LEVEL] {repos,tags} ...
+
+  positional arguments:
+    {repos,tags}
+      repos               List all Docker repositories
+      tags                List all Docker image tags
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -l LOG_LEVEL, --log-level LOG_LEVEL
+                          Set logging at a specific level. Options include: DEBUG,INFO,WARNING,ERROR,CRITICAL.
+```
+
 ## Local Installation
 
 This instruction assumes that you have your favorite virtual environment activated already:
 
-```pip install -e .`
+`pip install -e .`
 
 ## Building Docker Image
 
