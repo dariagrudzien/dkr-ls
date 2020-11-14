@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, re, datetime
+import argparse, re, datetime, logging
 from datetime import datetime, timedelta, timezone
 
 import docker
@@ -129,12 +129,12 @@ def listRepos(images, args):
     """
     Create output for `repos` argument.
     """
-    print('REPOSITORY')
+    logging.info('REPOSITORY')
     repos = []
     for image in images:
         if image['repository'] not in repos:
             repos.append(image['repository'])
-            print(image['repository'])
+            logging.info(image['repository'])
 
 def filterImages(images, now, args):
     """
@@ -213,7 +213,7 @@ def listTags(images, now, args):
     column_names = ['REPOSITORY', 'TAG', 'IMAGE ID', 'CREATED', 'SIZE']
     # calculate column padding and print out the header
     col_width = max(len(str(value)) for image in images for (key, value) in image.items()) + 2
-    print("".join(name.ljust(col_width) for name in column_names))
+    logging.info("".join(name.ljust(col_width) for name in column_names))
 
     # filter images according to size and age arguments
     filtered_images = filterImages(images, now, args)
@@ -235,18 +235,18 @@ def listTags(images, now, args):
         image_details.append(image['age'].ljust(col_width))
         image_details.append(processSize(image['size']).ljust(col_width))
 
-        print("".join(image_details))
+        logging.info("".join(image_details))
 
     # print out a sum of image sizes
     if args.sum:
         total_size = calculateImageSizeSum(filtered_images)
-        print(f'TOTAL: \t {total_size}'.rjust(col_width * 4))
+        logging.info(f'TOTAL: \t {total_size}'.rjust(col_width * 4))
 
 
 def main():
     usage = 'Usage: %prog [options]'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log-level', help='Set logging at a specific level. Options include DEBUG,INFO,WARNING,ERROR.',
+    parser.add_argument('-l', '--log-level', help='Set logging at a specific level. Options include: DEBUG,INFO,WARNING,ERROR,CRITICAL.',
                         metavar='LOG_LEVEL', default='INFO')
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
@@ -264,6 +264,12 @@ def main():
     now = datetime.now(timezone.utc)
     filtered_images = []
 
+    log_level = 'INFO'
+    if args.log_level:
+        log_level = args.log_level.upper()
+
+    logging.basicConfig(format='%(message)s', level=log_level)
+
     try:
         # initiate Docker client and get a list of images in local repository
         client = docker.from_env()
@@ -280,7 +286,7 @@ def main():
             filtered_images = filterImages(processed_images, now, args)
             listTags(filtered_images, now, args)
     except docker.errors.DockerException as e:
-        print(f'Error when trying to run Docker - make sure it\'s running on your machine: {e}')
+        logging.error(f'Error when trying to run Docker - make sure it\'s running on your machine: {e}')
 
 if __name__ == '__main__':
     main()
