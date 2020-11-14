@@ -9,7 +9,7 @@ from dateutil import parser, rrule, relativedelta
 class DkrlsError(Exception):
     pass
 
-def calculateAge(created, now):
+def calculate_age(created, now):
     """
     Pprepare a Docker CLI-like output of image age.
     After researching `datetime`, `dateutil` and other libraries
@@ -55,14 +55,14 @@ def calculateAge(created, now):
         raise DkrlsError(f'Encountered age of an image which this CLI can\'t handle: {rdelta}')
     return age
 
-def processSize(size):
+def process_size(size):
     """
     Docker SDK provides size in bytes, which is processed here to
     provide Docker CLI-like output.
     """
     final_size = ''
     if size < 1000:
-        final_size = f'{size} B'
+        final_size = f'{size}B'
     elif size > 1000 and size < 1000000:
         size = round(size / 1000, 1)
         final_size = f'{size}KB'
@@ -75,7 +75,7 @@ def processSize(size):
 
     return final_size
 
-def processImages(images):
+def process_images(images):
     """
     This takes a list with image attributes as provided by Docker Image class
     https://docker-py.readthedocs.io/en/stable/images.html#docker.models.images.Image
@@ -86,7 +86,7 @@ def processImages(images):
         attrs = image.attrs
         # Docker CLI uses 12 first characters, while short_id is only 10, so we need to strip
         # the long id which comes in `sha:<characters>` format
-        image_id = attrs['Id'].split(':')[1][0:11]
+        image_id = attrs['Id'].split(':')[1][0:12]
         if len(attrs['RepoTags']) != 0:
             for repo_tag in attrs['RepoTags']:
                 repo = repo_tag.split(':')[0]
@@ -111,32 +111,31 @@ def processImages(images):
             processed_images.append(image)
     return processed_images
 
-def addImageAge(images, now):
+def add_image_age(images, now):
     """
     Docker SDK provides date of image creations as a date in ISO format.
     It is processed here to provide Docker CLI-like output.
     """
     formatted_images = []
     for image in images:
-        age_number = calculateAge(image['created'], now)['number']
-        age_unit = calculateAge(image['created'], now)['unit']
+        age_number = calculate_age(image['created'], now)['number']
+        age_unit = calculate_age(image['created'], now)['unit']
         formatted_age = f'{age_number} {age_unit} ago'
         image['age'] = formatted_age
         formatted_images.append(image)
     return formatted_images
 
-def listRepos(images, args):
+def list_repos(images):
     """
     Create output for `repos` argument.
     """
-    logging.info('REPOSITORY')
     repos = []
     for image in images:
         if image['repository'] not in repos:
             repos.append(image['repository'])
-            logging.info(image['repository'])
+    return repos
 
-def filterImages(images, now, args):
+def filter_images(images, now, args):
     """
     A filter to select only those images which match
     specified size and age conditions.
@@ -158,7 +157,7 @@ def filterImages(images, now, args):
     else:
         return images
 
-def processPrefixes(images, prefixes):
+def process_prefixes(images, prefixes):
     """
     Remove any image which prefix doesn't match what was specified
     in CLI arguments. The result will include any image which
@@ -174,7 +173,7 @@ def processPrefixes(images, prefixes):
             del images[i]
     return images
 
-def collectMaxTags(images, tags):
+def collect_max_tags(images, tags):
     """
     Keep only the images if tags did not exceed the specified amount.
     """
@@ -190,7 +189,7 @@ def collectMaxTags(images, tags):
             del images[i]
     return images
 
-def calculateImageSizeSum(images):
+def calculate_image_size_sum(images):
     """
     Sum the total size of images in the local repo recalulated to
     a reasonable unit.
@@ -203,10 +202,10 @@ def calculateImageSizeSum(images):
         if image_id not in counted:
             counted[image_id] = 1
             total_size += int(images[i]['size'])
-    total_size = processSize(total_size)
+    total_size = process_size(total_size)
     return total_size
 
-def listTags(images, now, args):
+def list_tags(images, now, args):
     """
     Create output for `tags` argument.
     """
@@ -216,15 +215,15 @@ def listTags(images, now, args):
     logging.info("".join(name.ljust(col_width) for name in column_names))
 
     # filter images according to size and age arguments
-    filtered_images = filterImages(images, now, args)
+    filtered_images = filter_images(images, now, args)
 
     # filter images according to specified prefixes
     if args.prefix:
-        filtered_images = processPrefixes(filtered_images, args.prefix)
+        filtered_images = process_prefixes(filtered_images, args.prefix)
 
     # filter images according to specified amount of tags
     if args.maxTags:
-        filtered_images = collectMaxTags(filtered_images, args.maxTags)
+        filtered_images = collect_max_tags(filtered_images, args.maxTags)
 
     # prepare a Docker CLI-like output
     for image in filtered_images:
@@ -233,15 +232,14 @@ def listTags(images, now, args):
         image_details.append(image['tag'].ljust(col_width))
         image_details.append(image['id'].ljust(col_width))
         image_details.append(image['age'].ljust(col_width))
-        image_details.append(processSize(image['size']).ljust(col_width))
+        image_details.append(process_size(image['size']).ljust(col_width))
 
         logging.info("".join(image_details))
 
     # print out a sum of image sizes
     if args.sum:
-        total_size = calculateImageSizeSum(filtered_images)
+        total_size = calculate_image_size_sum(filtered_images)
         logging.info(f'TOTAL: \t {total_size}'.rjust(col_width * 4))
-
 
 def main():
     usage = 'Usage: %prog [options]'
@@ -274,17 +272,20 @@ def main():
         # initiate Docker client and get a list of images in local repository
         client = docker.from_env()
         images = client.images.list()
+
         # process images
-        processed_images = addImageAge(processImages(images), now)
+        processed_images = add_image_age(process_images(images), now)
 
         # list repos
         if args.cmd == 'repos':
-            listRepos(processed_images, args)
+            logging.info('REPOSITORY')
+            for image in list_repos(processed_images):
+                logging.info(image)
 
         #list tags
         if args.cmd == 'tags':
-            filtered_images = filterImages(processed_images, now, args)
-            listTags(filtered_images, now, args)
+            filtered_images = filter_images(processed_images, now, args)
+            list_tags(filtered_images, now, args)
     except docker.errors.DockerException as e:
         logging.error(f'Error when trying to run Docker - make sure it\'s running on your machine: {e}')
 
