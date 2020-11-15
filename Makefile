@@ -5,5 +5,10 @@ build: Dockerfile
 	docker build . -t $(IMAGE_NAME)
 	docker tag $(IMAGE_NAME) $(LATEST)
 
-.PHONY: build
-.DEFAULT_GOAL := build
+# run Python unit tests
+# this assumes that dependencies have been installed
+test:
+	python -m pytest -vv
+
+.PHONY: build, test
+.DEFAULT_GOAL := test
