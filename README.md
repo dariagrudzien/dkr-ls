@@ -62,6 +62,10 @@ This instruction assumes that you have your favorite virtual environment activat
 
 `pip install -e .`
 
+## Testing
+
+Run unit tests with `make test`.
+
 ## Building Docker Image
 
 From root directory run `make build` - it will build the `dkr-ls` image with a `latest` tag.
