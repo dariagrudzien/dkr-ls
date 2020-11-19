@@ -58,9 +58,14 @@ You can change the logging level, e.g. to see detailed logs:
 
 ## Local Installation
 
-This instruction assumes that you have your favorite virtual environment activated already:
+Activate your favorite virtual environment and install dependencies, e.g.:
 
-`pip install -e .`
+```sh
+  cd <project-dir>/dkr-ls
+  python3.8 -m venv venv
+  source venv/bin/activate
+  pip install -e .
+```
 
 ## Testing
 
